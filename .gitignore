@@ -1,0 +1,9 @@
+# generated credentials
+.env
+
+# Cloudflare tunnel runtime files
+.cloudflared.log
+.cloudflared.pid
+
+# macOS
+.DS_Store
