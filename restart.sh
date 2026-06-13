@@ -9,7 +9,7 @@ source "$(dirname "$0")/lib.sh"
 [[ ! -f ".env" ]] && error "Not configured yet. Run ./setup.sh first."
 
 info "Restarting d-cloud..."
-docker compose restart
+docker compose up -d
 success "d-cloud restarted."
 
 PORT=$(grep '^PORT=' .env | cut -d= -f2)
