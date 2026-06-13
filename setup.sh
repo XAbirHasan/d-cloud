@@ -33,7 +33,7 @@ ${BOLD}Usage:${NC}
 
 ${BOLD}Options:${NC}
   --disk <path>     Path to the disk or folder to use as storage (required)
-  --tunnel <type>   Remote access method: tailscale (default) or cloudflare
+  --tunnel <type>   Remote access method: tailscale (default), cloudflare, or both
   --port <port>     Local port for Nextcloud (default: 7070)
   --admin <user>    Admin username (default: admin)
   --interactive     Stream live logs during startup, stop watching when ready
@@ -107,8 +107,8 @@ validate_args() {
     || error "Disk path does not exist or is not a directory: $DISK_PATH"
 
   case "$TUNNEL" in
-    tailscale|cloudflare) ;;
-    *) error "--tunnel must be 'tailscale' or 'cloudflare', got: $TUNNEL" ;;
+    tailscale|cloudflare|both) ;;
+    *) error "--tunnel must be 'tailscale', 'cloudflare', or 'both', got: $TUNNEL" ;;
   esac
 
   validate_port
@@ -126,18 +126,16 @@ check_existing_install() {
 }
 
 check_tunnel_dependencies() {
-  case "$TUNNEL" in
-    tailscale)
-      require_command tailscale \
-        "Tailscale is not installed.\n  Install it from: https://tailscale.com/download"
-      tailscale status &>/dev/null \
-        || error "Tailscale is not running or not logged in.\n  Run: sudo tailscale up"
-      ;;
-    cloudflare)
-      require_command cloudflared \
-        "cloudflared is not installed.\n  Install it from: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/"
-      ;;
-  esac
+  if [[ "$TUNNEL" == "tailscale" || "$TUNNEL" == "both" ]]; then
+    require_command tailscale \
+      "Tailscale is not installed.\n  Install it from: https://tailscale.com/download"
+    tailscale status &>/dev/null \
+      || error "Tailscale is not running or not logged in.\n  Run: sudo tailscale up"
+  fi
+  if [[ "$TUNNEL" == "cloudflare" || "$TUNNEL" == "both" ]]; then
+    require_command cloudflared \
+      "cloudflared is not installed.\n  Install it from: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/"
+  fi
 }
 
 check_dependencies() {
@@ -169,7 +167,7 @@ generate_credentials() {
 determine_trusted_domains() {
   TRUSTED_DOMAINS="localhost 127.0.0.1"
 
-  [[ "$TUNNEL" != "tailscale" ]] && return
+  [[ "$TUNNEL" != "tailscale" && "$TUNNEL" != "both" ]] && return
 
   TS_IP=$(tailscale ip -4 2>/dev/null || true)
 
@@ -271,13 +269,16 @@ install_nextcloud() {
 }
 
 setup_cloudflare() {
+  # Index 2 when cloudflare-only; index 3 when both (tailscale already occupies index 2)
+  local cf_domain_index="${1:-2}"
+
   start_tunnel "$PORT"
 
   [[ -n "$CF_URL" ]] || return
 
   if [[ "$NC_READY" == true ]]; then
     docker compose exec -T nextcloud php /var/www/html/occ \
-      config:system:set trusted_domains 2 --value="$CF_DOMAIN" 2>/dev/null \
+      config:system:set trusted_domains "$cf_domain_index" --value="$CF_DOMAIN" 2>/dev/null \
       && success "Cloudflare domain registered with Nextcloud" \
       || warn "Could not register Cloudflare domain. Add it manually in Nextcloud admin settings."
   else
@@ -294,6 +295,10 @@ setup_tunnel() {
       success "Tailscale tunnel ready"
       ;;
     cloudflare) setup_cloudflare ;;
+    both)
+      success "Tailscale tunnel ready"
+      setup_cloudflare 3  # Tailscale IP occupies index 2 via TRUSTED_DOMAINS env var
+      ;;
   esac
 }
 
@@ -314,6 +319,12 @@ print_summary() {
     echo ""
     echo -e "  ${YELLOW}Quick tunnel URL resets on every restart.${NC}"
     echo -e "  ${YELLOW}For a permanent URL, see README → Cloudflare Named Tunnels.${NC}"
+  elif [[ "$TUNNEL" == "both" ]]; then
+    [[ -n "$TS_IP" ]] && echo -e "  ${BOLD}Remote access:${NC}   http://${TS_IP}:${PORT}  (Tailscale)"
+    [[ -n "$CF_URL" ]] && echo -e "  ${BOLD}Remote access:${NC}   ${CF_URL}  (Cloudflare)"
+    echo ""
+    echo -e "  ${YELLOW}Install Tailscale on your other devices to connect via Tailscale.${NC}"
+    echo -e "  ${YELLOW}Quick Cloudflare tunnel URL resets on every restart.${NC}"
   fi
 
   echo ""
