@@ -4,6 +4,7 @@
 # Cloudflare tunnel runtime files
 .cloudflared.log
 .cloudflared.pid
+.cloudflared.pid
 
 # macOS
 .DS_Store

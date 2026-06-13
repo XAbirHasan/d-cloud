@@ -56,7 +56,7 @@ require_command() {
 }
 
 generate_password() {
-  openssl rand -hex 32
+  openssl rand -base64 32 | tr -d '=+/' | head -c 43
 }
 
 parse_args() {
@@ -196,6 +196,7 @@ TRUSTED_DOMAINS=${TRUSTED_DOMAINS}
 TUNNEL=${TUNNEL}
 EOF
 
+  chmod 600 .env  # owner-read/write only — contains plaintext passwords
   success "Credentials generated and saved to .env"
 }
 
