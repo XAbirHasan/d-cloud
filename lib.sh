@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared helpers — sourced by setup.sh, restart.sh, teardown.sh
+# Shared helpers — sourced by setup.sh, restart.sh, stop.sh, status.sh, teardown.sh
 
 RED='\033[0;31m' 
 GREEN='\033[0;32m' 
@@ -12,6 +12,35 @@ info()    { echo -e "${BLUE}[d-cloud]${NC} $*"; }
 success() { echo -e "${GREEN}✓${NC} $*"; }
 warn()    { echo -e "${YELLOW}⚠${NC}  $*"; }
 error()   { echo -e "${RED}✗ ERROR:${NC} $*" >&2; exit 1; }
+
+require_command() {
+  local cmd="$1"
+  local msg="$2"
+  command -v "$cmd" &>/dev/null || error "$msg"
+}
+
+validate_tunnel_type() {
+  local tunnel="$1"
+  case "$tunnel" in
+    tailscale|cloudflare|both) ;;
+    *) error "--tunnel must be 'tailscale', 'cloudflare', or 'both', got: $tunnel" ;;
+  esac
+}
+
+check_tunnel_dependencies() {
+  local tunnel="$1"
+
+  validate_tunnel_type "$tunnel"
+
+  if [[ "$tunnel" == "tailscale" || "$tunnel" == "both" ]]; then
+    require_command tailscale "Tailscale is not installed. Install it from: https://tailscale.com/download"
+    tailscale status &>/dev/null || error "Tailscale is not running or not logged in. Run: sudo tailscale up"
+  fi
+
+  if [[ "$tunnel" == "cloudflare" || "$tunnel" == "both" ]]; then
+    require_command cloudflared "cloudflared is not installed. Install it from: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/"
+  fi
+}
 
 # Kill any running cloudflared tunnel and clean up pid/log files
 kill_tunnel() {

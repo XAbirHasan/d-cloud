@@ -14,7 +14,7 @@ Built on [Nextcloud](https://nextcloud.com) + Docker. Remote access via [Tailsca
 ```bash
 git clone https://github.com/your-username/d-cloud.git
 cd d-cloud
-./setup.sh --disk /path/to/your/disk
+./d-cloud.sh setup --disk /path/to/your/disk
 ```
 
 Admin credentials and access URLs are printed when setup completes.
@@ -23,7 +23,7 @@ Admin credentials and access URLs are printed when setup completes.
 
 ```
 --disk <path>     Path to the disk or folder to share (required)
---tunnel <type>   tailscale (default) or cloudflare
+--tunnel <type>   tailscale (default), cloudflare, or both
 --port <port>     Local port (default: 7070)
 --admin <user>    Admin username (default: admin)
 --interactive     Stream live logs during startup
@@ -47,8 +47,13 @@ Admin credentials and access URLs are printed when setup completes.
 ## Management
 
 ```bash
-./restart.sh          # restart containers + tunnel
-./teardown.sh         # stop everything (prompts before deleting data)
+./d-cloud.sh status      # show config + runtime state
+./d-cloud.sh start       # start/restart services using saved tunnel mode
+./d-cloud.sh start --tunnel both   # switch tunnel mode and save as new default
+./d-cloud.sh stop        # stop containers/tunnel, keep data
+./d-cloud.sh reset       # stop services with optional data deletion
+
+./d-cloud.sh help        # list all commands and aliases
 
 docker compose logs -f nextcloud   # live logs
 docker compose ps                  # container status
@@ -76,6 +81,6 @@ cat .cloudflared.log   # check tunnel output
 
 **Start fresh after a failed setup**
 ```bash
-./teardown.sh   # choose to remove data when prompted
-./setup.sh --disk /path/to/your/disk
+./d-cloud.sh reset   # choose to remove data when prompted
+./d-cloud.sh setup --disk /path/to/your/disk
 ```

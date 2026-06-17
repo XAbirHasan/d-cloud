@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# d-cloud — teardown script
+# d-cloud — reset services script
 set -euo pipefail
 
 # shellcheck source=lib.sh
@@ -16,7 +16,7 @@ if [[ -f ".cloudflared.pid" ]]; then
 fi
 
 echo ""
-echo -e "${YELLOW}Do you want to remove all Nextcloud data (database + config)?${NC}"
+echo -e "${YELLOW}Do you want to reset all Nextcloud data (database + config)?${NC}"
 echo -e "  ${BOLD}y${NC} — Remove everything (fresh start next time)"
 echo -e "  ${BOLD}N${NC} — Keep data (containers stop, data preserved)"
 echo ""
@@ -48,7 +48,7 @@ if [[ "$REMOVE_DATA" =~ ^[Yy]$ ]]; then
 else
   info "Stopping containers (data preserved)..."
   docker compose down --remove-orphans
-  success "Containers stopped. Run 'docker compose up -d' to start again."
+  success "Containers stopped. Run './d-cloud.sh start' to start again."
 fi
 
 echo ""

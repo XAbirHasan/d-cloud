@@ -1,5 +1,5 @@
 # d-cloud — docker-compose.yml
-# environment variables are injected from .env — run ./setup.sh to generate it
+# environment variables are injected from .env — run ./d-cloud.sh setup to generate it
 
 services:
   db:

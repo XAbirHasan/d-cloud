@@ -21,7 +21,7 @@ chmod +x /usr/local/bin/cloudflared
 ## 2. Run d-cloud with Cloudflare Tunnel
 
 ```bash
-./setup.sh --disk /path/to/your/disk --tunnel cloudflare
+./d-cloud.sh setup --disk /path/to/your/disk --tunnel cloudflare
 ```
 
 A temporary public URL like `https://something-random.trycloudflare.com` is printed at the end of setup. Open it in any browser — no app or VPN needed.
@@ -36,7 +36,7 @@ A temporary public URL like `https://something-random.trycloudflare.com` is prin
 
 ## Restarting
 
-Run `./restart.sh` — a new tunnel URL is generated and printed automatically.
+Run `./d-cloud.sh start` — a new tunnel URL is generated and printed automatically.
 
 ## Permanent URL (named tunnel)
 

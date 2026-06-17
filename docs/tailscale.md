@@ -15,7 +15,7 @@ sudo tailscale up
 ## 2. Run d-cloud with Tailscale
 
 ```bash
-./setup.sh --disk /path/to/your/disk --tunnel tailscale
+./d-cloud.sh setup --disk /path/to/your/disk --tunnel tailscale
 ```
 
 Your Tailscale IP is detected automatically and added to Nextcloud's trusted domains. The access URL is printed at the end of setup, e.g. `http://100.x.x.x:7070`.

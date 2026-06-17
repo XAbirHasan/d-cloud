@@ -29,7 +29,7 @@ cat <<EOF
 ${BOLD}d-cloud${NC} — Share your disk as private cloud storage
 
 ${BOLD}Usage:${NC}
-  ./setup.sh --disk <path> [options]
+  ./d-cloud.sh setup --disk <path> [options]
 
 ${BOLD}Options:${NC}
   --disk <path>     Path to the disk or folder to use as storage (required)
@@ -40,19 +40,13 @@ ${BOLD}Options:${NC}
   -h, --help        Show this help message
 
 ${BOLD}Examples:${NC}
-  ./setup.sh --disk /mnt/my-drive
-  ./setup.sh --disk /mnt/my-drive --tunnel cloudflare
-  ./setup.sh --disk ~/storage --admin alice --port 9090
-  ./setup.sh --disk /mnt/my-drive --interactive
+  ./d-cloud.sh setup --disk /mnt/my-drive
+  ./d-cloud.sh setup --disk /mnt/my-drive --tunnel cloudflare
+  ./d-cloud.sh setup --disk ~/storage --admin alice --port 9090
+  ./d-cloud.sh setup --disk /mnt/my-drive --interactive
 
 EOF
   exit 0
-}
-
-require_command() {
-  local cmd="$1"
-  local msg="$2"
-  command -v "$cmd" &>/dev/null || error "$msg"
 }
 
 generate_password() {
@@ -86,7 +80,7 @@ parse_args() {
         usage
         ;;
       *)
-        error "Unknown argument: $1\n  Run ./setup.sh --help for usage."
+        error "Unknown argument: $1\n  Run ./d-cloud.sh setup --help for usage."
         ;;
     esac
   done
@@ -101,15 +95,12 @@ validate_port() {
 
 validate_args() {
   [[ -n "$DISK_PATH" ]] \
-    || error "--disk is required.\n  Example: ./setup.sh --disk /mnt/my-drive"
+    || error "--disk is required.\n  Example: ./d-cloud.sh setup --disk /mnt/my-drive"
 
   [[ -d "$DISK_PATH" ]] \
     || error "Disk path does not exist or is not a directory: $DISK_PATH"
 
-  case "$TUNNEL" in
-    tailscale|cloudflare|both) ;;
-    *) error "--tunnel must be 'tailscale', 'cloudflare', or 'both', got: $TUNNEL" ;;
-  esac
+  validate_tunnel_type "$TUNNEL"
 
   validate_port
 
@@ -120,21 +111,8 @@ validate_args() {
 check_existing_install() {
   if [[ -f ".env" ]]; then
     warn "d-cloud appears to be already configured (.env exists)."
-    warn "To start fresh, run: ./teardown.sh"
+    warn "To start fresh, run: ./d-cloud.sh reset"
     exit 1
-  fi
-}
-
-check_tunnel_dependencies() {
-  if [[ "$TUNNEL" == "tailscale" || "$TUNNEL" == "both" ]]; then
-    require_command tailscale \
-      "Tailscale is not installed.\n  Install it from: https://tailscale.com/download"
-    tailscale status &>/dev/null \
-      || error "Tailscale is not running or not logged in.\n  Run: sudo tailscale up"
-  fi
-  if [[ "$TUNNEL" == "cloudflare" || "$TUNNEL" == "both" ]]; then
-    require_command cloudflared \
-      "cloudflared is not installed.\n  Install it from: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/"
   fi
 }
 
@@ -154,7 +132,7 @@ check_dependencies() {
   require_command curl "curl is not installed. Install it via your system package manager."
   require_command openssl "openssl is not installed. Install it via your system package manager."
 
-  check_tunnel_dependencies
+  check_tunnel_dependencies "$TUNNEL"
 
   success "All dependencies found"
 }
@@ -335,7 +313,7 @@ print_summary() {
   echo -e "  ${BOLD}Port:${NC}            ${PORT}"
   echo ""
   echo -e "  ${YELLOW}Credentials are saved in .env — do not share this file.${NC}"
-  echo -e "  ${YELLOW}To stop:  ./teardown.sh${NC}"
+  echo -e "  ${YELLOW}To stop:  ./d-cloud.sh stop${NC}"
   echo ""
 }
 
