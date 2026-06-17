@@ -84,3 +84,9 @@ cat .cloudflared.log   # check tunnel output
 ./d-cloud.sh reset   # choose to remove data when prompted
 ./d-cloud.sh setup --disk /path/to/your/disk
 ```
+
+## Thanks
+
+Special thanks to [Enrique Neyra](https://www.youtube.com/@Enrique-Neyra) for the inspiration through the video [Access Your Files ANYWHERE You Go — The Ultimate Pi 5 Setup](https://youtu.be/jOYG10CvZZA?si=ySxaJV_nN4dTSI4B).
+
+This project keeps the same core idea (private access to files from anywhere) but focuses on a Docker-based workflow instead of a Raspberry Pi 5 setup.
